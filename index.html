@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yehor Khadyko | Game Designer</title>
+
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Google Fonts: JetBrains Mono for clean body text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Connecting your local Humane font */
+        @font-face {
+            font-family: 'Humane';
+            src: url('Humane-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        /* === ЦВЕТОВЫЕ ПРОФИЛИ ТЕМ И ИХ ИНВЕРСИИ ДЛЯ ЛИНЗЫ === */
+        
+        /* 1. ТЕМНАЯ ТЕМА */
+        body[data-theme="dark"] {
+            --bg-color: #0a0a0c;       
+            --text-color: #ffffff;     
+            
+            /* Цвета внутри круга курсора */
+            --lens-bg: #ffffff;        /* Фоновый круг линзы */
+            --lens-text: #0a0a0c;      /* Цвет букв внутри линзы */
+        }
+
+        /* 2. СВЕТЛАЯ ТЕМА (Студийный серый) */
+        body[data-theme="light"] {
+            --bg-color: #afb2b4;       
+            --text-color: #000000;     
+            
+            --lens-bg: #000000;        
+            --lens-text: #afb2b4;      
+        }
+
+        /* 3. СИРЕНЕВАЯ ТЕМА (Идеальный своп из видео IMG_2436_2.mov) */
+        body[data-theme="lilac"] {
+            --bg-color: #4b2bf7;       
+            --text-color: #f3efe0;     
+            
+            --lens-bg: #f3efe0;        
+            --lens-text: #4b2bf7;      
+        }
+
+        /* ОТКЛЮЧЕНИЕ СИСТЕМНОГО КУРСОРA */
+        html, body, a, button, .theme-toggle, .project-link, .contact-card-link {
+            cursor: none !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+                        color 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+                        border-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            
+            /* Запрет выделения текста на всем сайте */
+            -webkit-user-select: none;  /* Safari */
+            -moz-user-select: none;     /* Firefox */
+            -ms-user-select: none;      /* IE10+ */
+            user-select: none;          /* Общепринятый стандарт */
+
+            /* Отключение синего выделения (акцента при тапе) на мобильных устройствах */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Запрет на перетаскивание медиа-элементов (чтобы не тянулся фантомный силуэт) */
+        .project-media, img, video {
+            -webkit-user-drag: none;
+            user-drag: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* === ЭФФЕКТ ДИНАМИЧЕСКОГО ПРОЯВЛЕНИЯ ПРИ СКРОЛЛЕ === */
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(25px);
+            /* Постоянная кинематографическая плавность без дёргания */
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .reveal-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Главная обертка для сохранения точной геометрии слоев */
+        .page-wrapper {
+            width: 100%;
+            min-height: 100vh;
+            padding: 4rem 2rem; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1440px; 
+        }
+
+        /* === ВЫСОКОПРОИЗВОДИТЕЛЬНАЯ МАСКА-ЛИНЗА ДЛЯ ТЕКСТА === */
+        .clipped-lens {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100vh;
+            padding: 4rem 2rem; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            user-select: none;
+            z-index: 99998;
+            
+            /* Чистый своп цветов без деформации фона */
+            background-color: var(--lens-bg);
+            
+            /* Динамическая обрезка круга по координатам из JS */
+            clip-path: circle(var(--cursor-radius, 10px) at var(--cursor-x, -200px) var(--cursor-y, -200px));
+            
+            /* Плавное появление после старта, чтобы убрать баг (0,0) */
+            opacity: 0;
+            transition: opacity 0.3s ease, background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Проявление линзы только при активном движении мыши */
+        body.cursor-active .clipped-lens {
+            opacity: 1;
+        }
+
+        /* Скрытие линзы в режиме просмотра медиа (зон с матовым стеклом) */
+        body.on-media-hovered .clipped-lens {
+            opacity: 0 !important;
+        }
+
+        /* ПЕРЕКРАШИВАНИЕ СУБТЕКСТА: Внутри линзы абсолютно все элементы 
+           теряют прозрачность и принимают единый акцентный цвет var(--lens-text) */
+        .clipped-lens,
+        .clipped-lens *,
+        .clipped-lens .meta-line,
+        .clipped-lens .project-tag,
+        .clipped-lens .project-desc,
+        .clipped-lens .contact-label,
+        .clipped-lens footer {
+            color: var(--lens-text) !important;
+            border-color: var(--lens-text) !important;
+            opacity: 1 !important; 
+        }
+
+        /* СТИЛИ ДЛЯ АКТИВНОГО ХОВЕРА ВНУТРИ ЛИНЗЫ */
+        .clipped-lens .hovered {
+            background-color: var(--lens-text) !important;
+            border-color: transparent !important;
+        }
+        
+        .clipped-lens .hovered,
+        .clipped-lens .hovered * {
+            color: var(--lens-bg) !important;
+            border-color: var(--lens-bg) !important;
+            opacity: 1 !important;
+        }
+
+        /* === ВСПОМОГАТЕЛЬНЫЙ КУРСОР ДЛЯ ЭФФЕКТА МАТОВОГО СТЕМЛА НА МЕДИA === */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: calc(var(--cursor-radius, 10px) * 2);
+            height: calc(var(--cursor-radius, 10px) * 2);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate3d(-50%, -50%, 0);
+            transform-origin: center center;
+            opacity: 0;
+            transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
+        }
+
+        /* Включаем матовое стекло только при наведении на медиа блоки */
+        body.cursor-active.on-media-hovered .custom-cursor {
+            opacity: 1;
+            background-color: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid var(--text-color);
+        }
+
+        /* Геометрия контента */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--text-color);
+            padding-bottom: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo, .section-title, .project-title, .manifesto-col h3, .contact-title {
+            font-family: 'Humane', sans-serif;
+            text-transform: uppercase;
+            width: fit-content; 
+        }
+
+        .logo {
+            font-size: 3rem;
+            line-height: 0.8;
+            letter-spacing: 1px;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            padding: 0.6rem 1.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .meta-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.6;
+            border-bottom: 1px solid var(--text-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 4rem;
+        }
+
+        .hero {
+            text-align: left;
+            margin-bottom: 12rem; 
+            position: relative;
+        }
+
+        .hero h1 {
+            position: relative; 
+            font-family: 'Humane', sans-serif;
+            font-size: 16vw; 
+            line-height: 0.8; 
+            margin-bottom: 3.5rem;
+            text-transform: uppercase;
+            letter-spacing: -3px;
+            word-wrap: break-word;
+            width: fit-content;
+        }
+
+        .letter {
+            opacity: 0;
+            animation: letterFadeIn 0.25s ease forwards;
+        }
+
+        @keyframes letterFadeIn {
+            to { opacity: 1; }
+        }
+
+        .typewriter-cursor {
+            position: absolute;
+            width: 1.8vw;
+            height: 11.5vw;
+            background-color: var(--text-color);
+            pointer-events: none;
+            opacity: 1;
+            transition: left 0.14s cubic-bezier(0.25, 1, 0.5, 1), top 0.14s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .blinking {
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            max-width: 720px;
+            line-height: 1.65;
+            opacity: 0.9;
+        }
+
+        .section-title {
+            font-size: 7rem; 
+            line-height: 0.8;
+            margin-bottom: 3.5rem;
+            border-bottom: 1px solid var(--text-color);
+            padding-bottom: 0.75rem;
+            letter-spacing: -1px;
+            width: 100%;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 4rem; 
+            margin-bottom: 12rem;
+        }
+
+        .project-card {
+            border: 1px solid var(--text-color);
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem;
+        }
+
+        .project-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .project-title {
+            font-size: 4.5rem;
+            line-height: 0.8;
+            margin-bottom: 2rem;
+        }
+
+        .project-media {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: 1px solid var(--text-color);
+            background-color: rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .project-desc {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            margin-bottom: 2.5rem;
+            flex-grow: 1;
+            opacity: 0.8;
+        }
+
+        .project-link {
+            display: inline-block;
+            align-self: flex-start;
+            color: var(--text-color);
+            text-decoration: none;
+            border-bottom: 2px solid var(--text-color);
+            font-weight: 500;
+            padding-bottom: 2px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .project-link:hover {
+            border-color: transparent;
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .manifesto-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--text-color);
+            margin-bottom: 12rem;
+        }
+
+        .manifesto-col {
+            padding: 4rem;
+        }
+
+        .manifesto-col:first-child {
+            border-right: 1px solid var(--text-color);
+        }
+
+        .manifesto-col h3 {
+            font-size: 4rem;
+            line-height: 0.8;
+            margin-bottom: 2.5rem;
+        }
+
+        .manifesto-list {
+            typewriter-cursor: none;
+            list-style: none;
+        }
+
+        .manifesto-list li {
+            margin-bottom: 2rem;
+            line-height: 1.65;
+            font-size: 0.95rem;
+        }
+
+        .manifesto-list li strong {
+            display: block;
+            font-size: 1.8rem;
+            line-height: 0.9;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-family: 'Humane', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 12rem;
+        }
+
+        .contact-card-link {
+            border: 1px solid var(--text-color);
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+                        color 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .contact-card-link:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .contact-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .contact-title {
+            font-size: 5rem;
+            line-height: 0.8;
+            letter-spacing: -0.5px;
+        }
+
+        footer {
+            border-top: 1px solid var(--text-color);
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 1024px) {
+            .custom-cursor, .clipped-lens { display: none !important; }
+            html, body, a, button, .theme-toggle, .project-link, .contact-card-link { cursor: auto !important; }
+        }
+
+        @media (max-width: 768px) {
+            .page-wrapper { padding: 2rem 1rem; }
+            header { margin-bottom: 2rem; }
+            .hero h1 { font-size: 17vw; line-height: 0.8; }
+            .section-title { font-size: 5rem; }
+            .projects-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .manifesto-grid { grid-template-columns: 1fr; }
+            .manifesto-col { padding: 2rem 1.5rem; }
+            .manifesto-col:first-child { border-right: none; border-bottom: 1px solid var(--text-color); }
+            .contact-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            footer { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- Вспомогательный элемент под размытие картинок -->
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <div class="page-wrapper">
+        <div class="container" id="mainContainer">
+            <header class="reveal-on-scroll">
+                <div class="logo">YEHOR KHADYKO</div>
+                <button class="theme-toggle" id="themeBtn">Change Style</button>
+            </header>
+
+            <div class="meta-line reveal-on-scroll">
+                <div>Game Design & Architecture</div>
+                <div>Year 2026</div>
+            </div>
+
+            <main>
+                <section class="hero">
+                    <!-- Класс reveal-on-scroll убран, чтобы заголовок отображался сразу и не зависел от скролла -->
+                    <h1 id="hero-heading">
+                        <span id="typewriter"></span><span id="cursor-target">&#8203;</span><span class="typewriter-cursor blinking" id="typewriterCursor"></span>
+                    </h1>
+                    <p class="reveal-on-scroll">
+                        I am a Game Designer specializing in creating engaging gameplay mechanics and their systemic interactions. My focus lies at the intersection of narrative design, atmospheric layouts, and deep mechanical feedback. I shape the player experience through tight game feel, impactful game response, and meticulous level pacing.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="section-title reveal-on-scroll">Projects</h2>
+                    <div class="projects-grid">
+                        
+                        <div class="project-card reveal-on-scroll">
+                            <div>
+                                <div class="project-tag">[Prototype / Itch.io]</div>
+                                <h3 class="project-title">Recoil Arena</h3>
+                                <div class="project-media">
+                                    <img src="recoil-arena.png" alt="Recoil Arena Gameplay" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <p class="project-desc">
+                                    A fast-paced top-down shooter prototype where movement is entirely dictated by weapon recoil. Focused on responsive controls, satisfying weapon feedback, and tight combat loops.
+                                </p>
+                            </div>
+                            <a href="https://yehor-khadyko.itch.io/recoil-arena" target="_blank" class="project-link">Play on Itch.io ↗</a>
+                        </div>
+
+                        <div class="project-card reveal-on-scroll">
+                            <div>
+                                <div class="project-tag">[In Development]</div>
+                                <h3 class="project-title">Project: Untitled</h3>
+                                <div class="project-media">
+                                    <span style="opacity: 0.2; font-family: 'JetBrains Mono'; font-size: 0.85rem;">LOADING...</span>
+                                </div>
+                                <p class="project-desc">
+                                    An upcoming, larger-scale project focusing on interlocking systemic mechanics, progression balancing, and narrative level design.
+                                </p>
+                            </div>
+                            <span class="project-link" style="opacity: 0.3; border: none;">Coming Soon</span>
+                        </div>
+
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title reveal-on-scroll">Core Focus</h2>
+                    <div class="manifesto-grid">
+                        
+                        <div class="manifesto-col reveal-on-scroll">
+                            <h3>What I Do</h3>
+                            <ul class="manifesto-list">
+                                <li>
+                                    <strong>Systemic Interaction</strong>
+                                    Designing engaging rules, progression curves, and balancing interlocking game loops where mechanics complement each other.
+                                </li>
+                                <li>
+                                    <strong>Game Feel & Impact</strong>
+                                    Fine-tuning weight, velocity, timings, and responsive mechanical feedback to maximize player immersion and satisfaction.
+                                </li>
+                                <li>
+                                    <strong>Atmosphere & Level Design</strong>
+                                    Structuring layouts to create specific combat and exploration scenarios, guiding player sightlines, and building intense environmental mood.
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="manifesto-col reveal-on-scroll">
+                            <h3>What I Don't Do</h3>
+                            <ul class="manifesto-list">
+                                <li>
+                                    <strong>Heavy Coding</strong>
+                                    I prefer visual scripting, logic assembly, and system architecture design over low-level codebase programming.
+                                </li>
+                                <li>
+                                    <strong>3D & Asset Art</strong>
+                                    I do not model or paint. I use functional assets as essential tools to test mechanics, scale, and layout pacing.
+                                </li>
+                                <li>
+                                    <strong>VFX & Final Animation</strong>
+                                    I concentrate on gameplay pacing, constraints, and impact feel, leaving final visual polish to specialized artists.
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title reveal-on-scroll">Contact Me</h2>
+                    <div class="contact-grid">
+                        
+                        <a href="https://www.linkedin.com/in/yehor-khadyko/" target="_blank" class="contact-card-link reveal-on-scroll">
+                            <span class="contact-label">[Network]</span>
+                            <span class="contact-title">LinkedIn ↗</span>
+                        </a>
+
+                        <a href="https://yehor-khadyko.itch.io" target="_blank" class="contact-card-link reveal-on-scroll">
+                            <span class="contact-label">[Developer]</span>
+                            <span class="contact-title">Itch.io ↗</span>
+                        </a>
+
+                        <a href="mailto:yehor.khadyko@gmail.com" class="contact-card-link reveal-on-scroll">
+                            <span class="contact-label">[Direct]</span>
+                            <span class="contact-title">Email ↗</span>
+                        </a>
+
+                    </div>
+                </section>
+            </main>
+
+            <footer class="reveal-on-scroll">
+                <div>© 2026 YEHOR KHADYKO. All rights reserved.</div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Smooth Scrolling Engine -->
+    <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+    <script>
+        // Init Lenis Smooth Scroll
+        const lenis = new Lenis({
+            duration: 1.4,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+            orientation: 'vertical',
+            smoothWheel: true,
+        });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        // ==========================================================================
+        // ГЕНЕРАЦИЯ ЗЕРКАЛЬНОГО СЛОЯ И СИНХРОНИЗАЦИЯ ТЕМ
+        // ==========================================================================
+        const mainContainer = document.getElementById('mainContainer');
+        const pageWrapper = document.querySelector('.page-wrapper');
+        
+        // Клонируем основной контент во второй слой-маску
+        const lensWrapper = document.createElement('div');
+        lensWrapper.className = 'clipped-lens';
+        const clonedContainer = mainContainer.cloneNode(true);
+        
+        // Чистим ID дубликатов, чтобы разметка оставалась валидной
+        clonedContainer.removeAttribute('id');
+        clonedContainer.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        lensWrapper.appendChild(clonedContainer);
+        pageWrapper.appendChild(lensWrapper);
+
+        // Ссылки на обе печатные зоны для их параллельного наполнения
+        const mainTypewriter = document.getElementById('typewriter');
+        const cloneTypewriter = lensWrapper.querySelector('.hero h1 span:first-child');
+
+        // ТЕМА-МЕНЕДЖЕР
+        const themeBtn = document.getElementById('themeBtn');
+        const body = document.body;
+        const themes = ['dark', 'light', 'lilac'];
+
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        body.setAttribute('data-theme', savedTheme);
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme') || 'dark';
+            const nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
+            const newTheme = themes[nextIndex];
+            
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            setTimeout(() => lenis.resize(), 100);
+        });
+
+        // ==========================================================================
+        // ЭФФЕКТ ПЕЧАТНОЙ МАШИНКИ (ДВУХПОТОЧНЫЙ СИНХРОН)
+        // ==========================================================================
+        const text = "DESIGNING GAMES.\nSHAPING ATMOSPHERE.";
+        const headingElement = document.getElementById('hero-heading');
+        const typewriterCursor = document.getElementById('typewriterCursor');
+        const cursorTarget = document.getElementById('cursor-target');
+        let index = 0;
+
+        function updateTypewriterCursorPosition() {
+            const containerRect = headingElement.getBoundingClientRect();
+            const targetRect = cursorTarget.getBoundingClientRect();
+            typewriterCursor.style.left = `${targetRect.left - containerRect.left}px`;
+            typewriterCursor.style.top = `${targetRect.top - containerRect.top}px`;
+        }
+
+        function type() {
+            if (index < text.length) {
+                const char = text.charAt(index);
+                if (char === '\n') {
+                    mainTypewriter.appendChild(document.createElement('br'));
+                    if (cloneTypewriter) cloneTypewriter.appendChild(document.createElement('br'));
+                    index++;
+                    updateTypewriterCursorPosition();
+                    setTimeout(type, 60);
+                } else {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.className = 'letter'; 
+                    letterSpan.innerHTML = char === ' ' ? '&nbsp;' : char;
+                    mainTypewriter.appendChild(letterSpan);
+
+                    if (cloneTypewriter) {
+                        const letterSpanClone = letterSpan.cloneNode(true);
+                        cloneTypewriter.appendChild(letterSpanClone);
+                    }
+
+                    index++;
+                    updateTypewriterCursorPosition();
+                    setTimeout(type, 60); 
+                }
+            } else {
+                setTimeout(() => {
+                    typewriterCursor.classList.remove('blinking');
+                    typewriterCursor.style.opacity = '0';
+                }, 2000);
+            }
+        }
+        window.addEventListener('resize', updateTypewriterCursorPosition);
+        
+        // Машинка запускается сразу же после загрузки страницы (через 400мс) без ожидания скролла
+        window.onload = () => { 
+            updateTypewriterCursorPosition(); 
+            setTimeout(type, 400); 
+        };
+
+        // ==========================================================================
+        // ИНЕРЦИОННЫЙ КУРСОР (LERP) И ИЗМЕНЕНИЕ МАСШТАБА (GAME FEEL)
+        // ==========================================================================
+        const cursorNode = document.getElementById('customCursor');
+        let mouseX = 0, mouseY = 0;   
+        let cursorX = 0, cursorY = 0; 
+
+        let currentRadius = 0;   /* Начинаем с нулевого радиуса */
+        let targetRadius = 0;    /* Целевой радиус также 0 на старте */
+        let isClicking = false;
+        let isOutside = true;    /* Флаг нахождения за пределами экрана */
+
+        window.addEventListener('mousemove', (e) => {
+            if (e.clientX === 0 && e.clientY === 0) return;
+            
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            if (isOutside) {
+                // Мгновенно телепортируем координаты линзы к точке входа, чтобы убрать скольжение
+                cursorX = mouseX;
+                cursorY = mouseY;
+                currentRadius = 0; // Начинаем плавное раскрытие из нулевой точки
+                targetRadius = 10; // Целевой радиус линзы по умолчанию
+                isOutside = false;
+                body.classList.add('cursor-active');
+            }
+        });
+
+        // Плавный уход в ноль при выходе за пределы экрана
+        document.addEventListener('mouseleave', () => {
+            isOutside = true;
+            targetRadius = 0; // Сжимаем линзу в ноль
+        });
+        
+        document.addEventListener('mouseenter', (e) => {
+            if (e.clientX === 0 && e.clientY === 0) return;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Тактильный зажим ЛКМ (Сжатие радиуса)
+        window.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && !isOutside) { 
+                isClicking = true;
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            isClicking = false;
+        });
+
+        // Объединенный анимационный цикл интерполяции координат и размеров линзы
+        function syncCursorCoordinates() {
+            cursorX += (mouseX - cursorX) * 0.16;
+            cursorY += (mouseY - cursorY) * 0.16;
+            
+            // Расчет сжатия при клике
+            let activeTargetRadius = isClicking ? targetRadius * 0.72 : targetRadius;
+            currentRadius += (activeTargetRadius - currentRadius) * 0.2; // Плавное изменение размера линзы
+            
+            // Если мышка ушла за пределы и радиус практически равен 0, убираем класс активности
+            if (isOutside && currentRadius < 0.1) {
+                currentRadius = 0;
+                body.classList.remove('cursor-active');
+            }
+            
+            // clientY + window.scrollY учитывает прокрутку страницы для абсолютного позиционирования clip-path
+            const pageX = cursorX;
+            const pageY = cursorY + window.scrollY;
+            
+            // Передача данных в стили
+            document.documentElement.style.setProperty('--cursor-x', `${pageX}px`);
+            document.documentElement.style.setProperty('--cursor-y', `${pageY}px`);
+            document.documentElement.style.setProperty('--cursor-radius', `${currentRadius}px`);
+            
+            // Трансляция вспомогательного курсора (для размытия)
+            cursorNode.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
+            
+            requestAnimationFrame(syncCursorCoordinates);
+        }
+        requestAnimationFrame(syncCursorCoordinates);
+
+        // ==========================================================================
+        // ДИНАМИЧЕСКИЙ СЛУШАТЕЛЬ СОСТОЯНИЙ КУРСОРA (ТРИГГЕРЫ НАВЕДЕНИЯ)
+        // ==========================================================================
+        function updateInteractiveTriggers() {
+            // Селекторы интерактивных элементов
+            const selector = 'a, button, .theme-toggle, .project-link, .contact-card-link';
+            
+            // Получаем актуальные массивы оригиналов и клонов для точного маппинга по индексам
+            const realElements = Array.from(mainContainer.querySelectorAll(selector));
+            const clonedElements = Array.from(lensWrapper.querySelectorAll(selector));
+
+            realElements.forEach((element, index) => {
+                if (!element.dataset.cursorBound) {
+                    element.dataset.cursorBound = "true";
+                    
+                    const clone = clonedElements[index];
+
+                    element.addEventListener('mouseenter', () => {
+                        if (!isOutside) {
+                            targetRadius = 25; 
+                        }
+                        if (clone) {
+                            clone.classList.add('hovered');
+                        }
+                    });
+                    
+                    element.addEventListener('mouseleave', () => {
+                        if (!isOutside) {
+                            targetRadius = 10; 
+                        }
+                        if (clone) {
+                            clone.classList.remove('hovered');
+                        }
+                    });
+                }
+            });
+
+            // Медиа-зоны переводят курсор в режим матового стекла
+            const mediaContainers = document.querySelectorAll('.project-media, img');
+            mediaContainers.forEach(container => {
+                if (!container.dataset.mediaBound) {
+                    container.dataset.mediaBound = "true";
+                    container.addEventListener('mouseenter', () => {
+                        body.classList.add('on-media-hovered');
+                    });
+                    container.addEventListener('mouseleave', () => {
+                        body.classList.remove('on-media-hovered');
+                    });
+                }
+            });
+        }
+        
+        updateInteractiveTriggers();
+        setInterval(updateInteractiveTriggers, 1000);
+
+        // ==========================================================================
+        // КАСКАДНЫЙ СКРОЛЛ-НАБЛЮДАТЕЛЬ (STAGGER REVEAL ENGINE - ONCE REVEAL)
+        // ==========================================================================
+        const realReveals = Array.from(mainContainer.querySelectorAll('.reveal-on-scroll'));
+        const clonedReveals = Array.from(lensWrapper.querySelectorAll('.reveal-on-scroll'));
+
+        let revealQueue = [];
+        let revealTimeout = null;
+
+        // Функция обработки очереди: сортирует и проявляет элементы строго каскадом сверху вниз
+        function processRevealQueue() {
+            if (revealQueue.length === 0) return;
+            
+            // Сортируем все элементы, попавшие в кадр, по их вертикальной координате на странице
+            revealQueue.sort((a, b) => a.y - b.y);
+
+            revealQueue.forEach((item, index) => {
+                setTimeout(() => {
+                    item.target.classList.add('visible');
+                    if (item.clone) item.clone.classList.add('visible');
+                }, index * 100); // 100мс задержка между каждым элементом создает красивый последовательный эффект
+            });
+
+            // Сбрасываем очередь
+            revealQueue = [];
+            revealTimeout = null;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const index = realReveals.indexOf(entry.target);
+                const clone = clonedReveals[index];
+
+                if (entry.isIntersecting) {
+                    if (!entry.target.classList.contains('visible')) {
+                        // Прекращаем наблюдение за этим элементом, чтобы анимация проигралась строго ОДИН РАЗ
+                        observer.unobserve(entry.target);
+
+                        // Кладем элемент в очередь и запоминаем его абсолютную Y-координату
+                        revealQueue.push({
+                            target: entry.target,
+                            clone: clone,
+                            y: entry.target.getBoundingClientRect().top + window.scrollY
+                        });
+                        
+                        // Запускаем обработчик пачки с микро-задержкой, чтобы собрать все вошедшие элементы
+                        if (!revealTimeout) {
+                            revealTimeout = setTimeout(processRevealQueue, 30);
+                        }
+                    }
+                }
+            });
+        }, {
+            rootMargin: '10px 0px -40px 0px',
+            threshold: 0.05
+        });
+
+        realReveals.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
