@@ -92,6 +92,19 @@
             position: relative;
         }
 
+        /* === СТИЛИ ДЛЯ АДАПТИВНЫХ ПЕРЕНОСОВ СТРОК (БЕЗ ПЕРЕЗАГРУЗКИ) === */
+        
+        /* По умолчанию (Десктоп и Альбомный режим): скрываем портретные переносы, активируем пробелы */
+        .portrait-br {
+            display: none !important;
+        }
+        .landscape-space {
+            display: inline !important;
+        }
+        .always-br {
+            display: inline !important;
+        }
+
         /* === ЭФФЕКТ ДИНАМИЧЕСКОГО ПРОЯВЛЕНИЯ ПРИ СКРОЛЛЕ === */
         .reveal-on-scroll {
             opacity: 0;
@@ -486,7 +499,7 @@
             opacity: 0.6;
         }
 
-        /* SVG стрелка для кроссплатформенной унификации внешнего вида */
+        /* SVG стрелка с острыми гранями */
         .arrow-svg {
             width: 0.85em; 
             height: 0.85em; 
@@ -514,13 +527,13 @@
             }
         }
 
-        /* Портретная ориентация (мобильные и планшеты) — Крупная 4-строчная типографика */
-        @media (max-width: 1024px) and (orientation: portrait) {
+        /* Планшеты в книжной ориентации (portrait) — Плотная монументальная верстка */
+        @media (min-width: 481px) and (max-width: 1024px) and (orientation: portrait) {
             .page-wrapper { padding: 2rem 1rem; }
             .hero h1 {
-                font-size: 15.5vw !important; /* Текст растягивается практически во всю ширину */
-                line-height: 0.82 !important;
-                letter-spacing: -2px !important;
+                font-size: 18vw !important; /* Настоящая гигантская типографика */
+                line-height: 0.8 !important;
+                letter-spacing: -3px !important;
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
                 margin-bottom: 2rem !important;
@@ -529,7 +542,13 @@
             }
             .typewriter-cursor {
                 width: 1.8vw !important;
-                height: 10.5vw !important;
+                height: 12vw !important;
+            }
+            .portrait-br {
+                display: inline !important;
+            }
+            .landscape-space {
+                display: none !important;
             }
             .section-title { font-size: 5rem; }
             .projects-grid { grid-template-columns: 1fr; gap: 3rem; }
@@ -540,17 +559,36 @@
             footer { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
         }
 
-        /* Специфичный фикс для узких экранов телефонов в портрете */
+        /* Смартфоны в книжной ориентации (portrait) — Заголовок занимает максимальную площадь экрана */
         @media (max-width: 480px) and (orientation: portrait) {
+            .page-wrapper { padding: 2rem 0.75rem; }
             .hero h1 {
-                font-size: 16.5vw !important;
-                line-height: 0.8 !important;
-                letter-spacing: -1.5px !important;
+                font-size: 21.5vw !important; /* Увеличено до предела для телефонов */
+                line-height: 0.78 !important;
+                letter-spacing: -2px !important;
+                padding-left: 0.2rem;
+                padding-right: 0.2rem;
+                margin-bottom: 2rem !important;
+                word-wrap: break-word;
+                white-space: normal !important;
             }
             .typewriter-cursor {
                 width: 2.2vw !important;
-                height: 11.5vw !important;
+                height: 14vw !important;
             }
+            .portrait-br {
+                display: inline !important;
+            }
+            .landscape-space {
+                display: none !important;
+            }
+            .section-title { font-size: 5rem; }
+            .projects-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .manifesto-grid { grid-template-columns: 1fr; }
+            .manifesto-col { padding: 2rem 1.5rem; }
+            .manifesto-col:first-child { border-right: none; border-bottom: 1px solid var(--text-color); }
+            .contact-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            footer { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
         }
 
         /* Альбомная ориентация (мобильные и планшеты) — Жесткая 2-строчная верстка */
@@ -567,6 +605,12 @@
             .typewriter-cursor {
                 width: 1.1vw !important;
                 height: 5.8vw !important;
+            }
+            .portrait-br {
+                display: none !important;
+            }
+            .landscape-space {
+                display: inline !important;
             }
         }
     </style>
@@ -615,7 +659,7 @@
                                 </p>
                             </div>
                             <a href="https://yehor-khadyko.itch.io/recoil-arena" target="_blank" class="project-link">
-                                Play on Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                                Play on Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
                             </a>
                         </div>
 
@@ -686,21 +730,21 @@
                         <a href="https://www.linkedin.com/in/yehor-khadyko/" target="_blank" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Network]</span>
                             <span class="contact-title">
-                                LinkedIn <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                                LinkedIn <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
                             </span>
                         </a>
 
                         <a href="https://yehor-khadyko.itch.io" target="_blank" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Developer]</span>
                             <span class="contact-title">
-                                Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                                Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
                             </span>
                         </a>
 
                         <a href="mailto:yehor.khadyko@gmail.com" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Direct]</span>
                             <span class="contact-title">
-                                Email <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                                Email <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
                             </span>
                         </a>
 
@@ -769,19 +813,11 @@
         });
 
         // ==========================================================================
-        // ЭФФЕКТ ПЕЧАТНОЙ МАШИНКИ (ДВУХПОТОЧНЫЙ СИНХРОН С УЧЕТОМ ОРИЕНТАЦИИ ЭКРАНА)
+        // ЭФФЕКТ ПЕЧАТНОЙ МАШИНКИ (ДВУХПОТОЧНЫЙ СИНХРОН И ДИНАМИЧЕСКИЕ ПЕРЕНОСЫ)
         // ==========================================================================
-        function getResponsiveText() {
-            // Если портретная ориентация на мобильном или планшете — разбиваем на 4 строки
-            const isPortrait = window.matchMedia("(max-width: 1024px) and (orientation: portrait)").matches;
-            if (isPortrait) {
-                return "DESIGNING\nGAMES.\nSHAPING\nATMOSPHERE.";
-            } else {
-                return "DESIGNING GAMES.\nSHAPING ATMOSPHERE.";
-            }
-        }
-
-        const text = getResponsiveText();
+        
+        // {p} — портретный перенос (4 строки), {a} — всегда перенос (2 строки)
+        const text = "DESIGNING{p}GAMES.{a}SHAPING{p}ATMOSPHERE.";
         const headingElement = document.getElementById('hero-heading');
         const typewriterCursor = document.getElementById('typewriterCursor');
         const cursorTarget = document.getElementById('cursor-target');
@@ -796,22 +832,53 @@
 
         function type() {
             if (index < text.length) {
-                const char = text.charAt(index);
-                if (char === '\n') {
-                    mainTypewriter.appendChild(document.createElement('br'));
-                    if (cloneTypewriter) cloneTypewriter.appendChild(document.createElement('br'));
-                    index++;
+                // Если встречаем тег адаптивного переноса для портрета {p}
+                if (text.startsWith('{p}', index)) {
+                    // Создаем переносы для портрета
+                    const brMain = document.createElement('br');
+                    brMain.className = 'portrait-br';
+                    // Создаем пробелы для альбома
+                    const spaceMain = document.createElement('span');
+                    spaceMain.className = 'landscape-space';
+                    spaceMain.innerHTML = '&nbsp;';
+
+                    mainTypewriter.appendChild(brMain);
+                    mainTypewriter.appendChild(spaceMain);
+
+                    if (cloneTypewriter) {
+                        cloneTypewriter.appendChild(brMain.cloneNode(true));
+                        cloneTypewriter.appendChild(spaceMain.cloneNode(true));
+                    }
+
+                    index += 3; // Пропускаем токен '{p}'
                     updateTypewriterCursorPosition();
                     setTimeout(type, 60);
-                } else {
+                } 
+                // Если встречаем тег обязательного переноса {a}
+                else if (text.startsWith('{a}', index)) {
+                    const brMain = document.createElement('br');
+                    brMain.className = 'always-br';
+
+                    mainTypewriter.appendChild(brMain);
+
+                    if (cloneTypewriter) {
+                        cloneTypewriter.appendChild(brMain.cloneNode(true));
+                    }
+
+                    index += 3; // Пропускаем токен '{a}'
+                    updateTypewriterCursorPosition();
+                    setTimeout(type, 60);
+                } 
+                // Обычный символ
+                else {
+                    const char = text.charAt(index);
                     const letterSpan = document.createElement('span');
                     letterSpan.className = 'letter'; 
                     letterSpan.innerHTML = char === ' ' ? '&nbsp;' : char;
                     mainTypewriter.appendChild(letterSpan);
 
                     if (cloneTypewriter) {
-                        const letterSpanClone = letterSpan.cloneNode(true);
-                        cloneTypewriter.appendChild(letterSpanClone);
+                        cloneTypewriter.appendChild(letterSpan.cloneNode(true));
                     }
 
                     index++;
