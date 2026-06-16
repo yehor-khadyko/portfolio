@@ -153,12 +153,18 @@
             /* Чистый своп цветов без деформации фона */
             background-color: var(--lens-bg);
             
-            /* Динамическая обрезка круга по координатам из JS */
-            clip-path: circle(var(--cursor-radius, 10px) at var(--cursor-x, -200px) var(--cursor-y, -200px));
+            /* Инициализация дефолтных значений переменных во избежание скачков до движения мыши */
+            --cursor-x: -200px;
+            --cursor-y: -200px;
+            --cursor-radius: 10px;
+            
+            /* Динамическая обрезка круга по координатам, локализованным внутри элемента маски */
+            clip-path: circle(var(--cursor-radius) at var(--cursor-x) var(--cursor-y));
             
             /* Плавное появление после старта, чтобы убрать баг (0,0) */
             opacity: 0;
             transition: opacity 0.3s ease, background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: clip-path, opacity; /* GPU ускорение */
         }
 
         /* Проявление линзы только при активном движении мыши */
@@ -634,7 +640,7 @@
 
             <main>
                 <section class="hero">
-                    <!-- Класс reveal-on-scroll убран, чтобы заголовок отображался сразу и не зависел от скролла -->
+                    <!-- Заголовок отображается сразу и не зависит от скролла -->
                     <h1 id="hero-heading">
                         <span id="typewriter"></span><span id="cursor-target">&#8203;</span><span class="typewriter-cursor blinking" id="typewriterCursor"></span>
                     </h1>
@@ -676,7 +682,7 @@
                                 </p>
                             </div>
                             <span class="project-link" style="opacity: 0.3; border: none;">Coming Soon</span>
-                        </div>
+                        </div> 
                         -->
 
                     </div>
@@ -803,6 +809,7 @@
         const savedTheme = localStorage.getItem('theme') || 'dark';
         body.setAttribute('data-theme', savedTheme);
 
+        let resizeTimeout;
         themeBtn.addEventListener('click', () => {
             const currentTheme = body.getAttribute('data-theme') || 'dark';
             const nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
@@ -811,7 +818,9 @@
             body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             
-            setTimeout(() => lenis.resize(), 100);
+            // Предотвращение накладывающихся вызовов при быстром переключении кликами (Debounce)
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => lenis.resize(), 100);
         });
 
         // ==========================================================================
@@ -825,11 +834,16 @@
         const cursorTarget = document.getElementById('cursor-target');
         let index = 0;
 
+        // Кэширование размеров родителя для предотвращения Layout Thrashing в анимационном цикле
+        let headingRectCache = null;
+
         function updateTypewriterCursorPosition() {
-            const containerRect = headingElement.getBoundingClientRect();
+            if (!headingRectCache) {
+                headingRectCache = headingElement.getBoundingClientRect();
+            }
             const targetRect = cursorTarget.getBoundingClientRect();
-            typewriterCursor.style.left = `${targetRect.left - containerRect.left}px`;
-            typewriterCursor.style.top = `${targetRect.top - containerRect.top}px`;
+            typewriterCursor.style.left = `${targetRect.left - headingRectCache.left}px`;
+            typewriterCursor.style.top = `${targetRect.top - headingRectCache.top}px`;
         }
 
         function type() {
@@ -894,7 +908,11 @@
                 }, 2000);
             }
         }
-        window.addEventListener('resize', updateTypewriterCursorPosition);
+        
+        window.addEventListener('resize', () => {
+            headingRectCache = null; // Инвалидация кэша при изменении размеров экрана
+            updateTypewriterCursorPosition();
+        });
         
         // Машинка запускается сразу же после загрузки страницы (через 400мс) без ожидания скролла
         window.onload = () => { 
@@ -972,10 +990,10 @@
             const pageX = cursorX;
             const pageY = cursorY + window.scrollY;
             
-            // Передача данных в стили
-            document.documentElement.style.setProperty('--cursor-x', `${pageX}px`);
-            document.documentElement.style.setProperty('--cursor-y', `${pageY}px`);
-            document.documentElement.style.setProperty('--cursor-radius', `${currentRadius}px`);
+            // Оптимизация производительности: свойства применяются напрямую к узлу линзы, а не к корню HTML
+            lensWrapper.style.setProperty('--cursor-x', `${pageX}px`);
+            lensWrapper.style.setProperty('--cursor-y', `${pageY}px`);
+            lensWrapper.style.setProperty('--cursor-radius', `${currentRadius}px`);
             
             // Трансляция вспомогательного курсора (для размытия)
             cursorNode.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
@@ -1036,8 +1054,8 @@
             });
         }
         
+        // Так как контент статичен, вызова функций при инициализации DOM достаточно
         updateInteractiveTriggers();
-        setInterval(updateInteractiveTriggers, 1000);
 
         // ==========================================================================
         // КАСКАДНЫЙ СКРОЛЛ-НАБЛЮДАТЕЛЬ (STAGGER REVEAL ENGINE - ONCE REVEAL)
@@ -1077,11 +1095,11 @@
                         // Прекращаем наблюдение за этим элементом, чтобы анимация проигралась строго ОДИН РАЗ
                         observer.unobserve(entry.target);
 
-                        // Кладем элемент в очередь и запоминаем его абсолютную Y-координату
+                        // Кладем элемент в очередь и запоминаем его нативную абсолютную Y-координату (без вызова getBoundingClientRect())
                         revealQueue.push({
                             target: entry.target,
                             clone: clone,
-                            y: entry.target.getBoundingClientRect().top + window.scrollY
+                            y: entry.boundingClientRect.top + window.scrollY
                         });
                         
                         // Запускаем обработчик пачки с микро-задержкой, чтобы собрать все вошедшие элементы
