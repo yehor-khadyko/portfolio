@@ -51,18 +51,10 @@
             --lens-text: #4b2bf7;      
         }
 
-        /* ОТКЛЮЧЕНИЕ СИСТЕМНОГО КУРСОРA */
-        html, body, a, button, .theme-toggle, .project-link, .contact-card-link {
-            cursor: none !important;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            transition: background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
-                        color 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
-                        border-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             
             /* Запрет выделения текста на всем сайте */
             -webkit-user-select: none;  /* Safari */
@@ -72,6 +64,17 @@
 
             /* Отключение синего выделения (акцента при тапе) на мобильных устройствах */
             -webkit-tap-highlight-color: transparent;
+
+            /* Жесткое отключение системных эмодзи для символов */
+            font-variant-emoji: text !important;
+        }
+
+        /* СИНХРОНИЗАЦИЯ СМЕНЫ ТЕМЫ ДЛЯ IOS SAFARI */
+        body, header, main, section, div, p, h1, h2, h3, a, button, span, svg,
+        .clipped-lens, .clipped-lens * {
+            transition: background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                        color 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                        border-color 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
         }
 
         /* Запрет на перетаскивание медиа-элементов (чтобы не тянулся фантомный силуэт) */
@@ -95,7 +98,7 @@
             transform: translateY(25px);
             /* Постоянная кинематографическая плавность без дёргания */
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
             will-change: opacity, transform;
         }
 
@@ -198,13 +201,17 @@
             transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
         }
 
-        /* Включаем матовое стекло только при наведении на медиа блоки */
+        /* Включаем матовое стекло при наведении на медиа блоки (Apple Liquid Glass) */
         body.cursor-active.on-media-hovered .custom-cursor {
             opacity: 1;
-            background-color: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            border: 1px solid var(--text-color);
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            backdrop-filter: blur(8px) contrast(1.2) saturate(1.2) !important;
+            -webkit-backdrop-filter: blur(8px) contrast(1.2) saturate(1.2) !important;
+            
+            /* Динамическое смешивание цветов: граница сама белеет на темном и чернеет на светлом */
+            border: 1px solid var(--text-color) !important;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2), 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+            mix-blend-mode: difference !important;
         }
 
         /* Геометрия контента */
@@ -479,15 +486,51 @@
             opacity: 0.6;
         }
 
-        @media (max-width: 1024px) {
-            .custom-cursor, .clipped-lens { display: none !important; }
-            html, body, a, button, .theme-toggle, .project-link, .contact-card-link { cursor: auto !important; }
+        /* SVG стрелка для кроссплатформенной унификации внешнего вида */
+        .arrow-svg {
+            width: 0.85em; 
+            height: 0.85em; 
+            transform: translate(0.08em, -0.05em); 
+            display: inline-block; 
+            vertical-align: middle;
         }
 
-        @media (max-width: 768px) {
+        /* === МЕДИA-ЗАПРОСЫ ДЛЯ СМАРТФОНОВ И ПЛАНШЕТОВ === */
+
+        /* Скрытие кастомного курсора на сенсорных интерфейсах */
+        @media (pointer: coarse) {
+            .custom-cursor, .clipped-lens { 
+                display: none !important; 
+            }
+            html, body, a, button, .theme-toggle, .project-link, .contact-card-link { 
+                cursor: auto !important; 
+            }
+        }
+
+        /* Кастомный курсор активен ТОЛЬКО на ПК и устройствах с точным указателем (мышь, трекпад) */
+        @media (pointer: fine) {
+            html, body, a, button, .theme-toggle, .project-link, .contact-card-link {
+                cursor: none !important;
+            }
+        }
+
+        /* Портретная ориентация (мобильные и планшеты) — Крупная 4-строчная типографика */
+        @media (max-width: 1024px) and (orientation: portrait) {
             .page-wrapper { padding: 2rem 1rem; }
-            header { margin-bottom: 2rem; }
-            .hero h1 { font-size: 17vw; line-height: 0.8; }
+            .hero h1 {
+                font-size: 15.5vw !important; /* Текст растягивается практически во всю ширину */
+                line-height: 0.82 !important;
+                letter-spacing: -2px !important;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                margin-bottom: 2rem !important;
+                word-wrap: break-word;
+                white-space: normal !important;
+            }
+            .typewriter-cursor {
+                width: 1.8vw !important;
+                height: 10.5vw !important;
+            }
             .section-title { font-size: 5rem; }
             .projects-grid { grid-template-columns: 1fr; gap: 3rem; }
             .manifesto-grid { grid-template-columns: 1fr; }
@@ -495,6 +538,36 @@
             .manifesto-col:first-child { border-right: none; border-bottom: 1px solid var(--text-color); }
             .contact-grid { grid-template-columns: 1fr; gap: 1.5rem; }
             footer { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+        }
+
+        /* Специфичный фикс для узких экранов телефонов в портрете */
+        @media (max-width: 480px) and (orientation: portrait) {
+            .hero h1 {
+                font-size: 16.5vw !important;
+                line-height: 0.8 !important;
+                letter-spacing: -1.5px !important;
+            }
+            .typewriter-cursor {
+                width: 2.2vw !important;
+                height: 11.5vw !important;
+            }
+        }
+
+        /* Альбомная ориентация (мобильные и планшеты) — Жесткая 2-строчная верстка */
+        @media (max-width: 1024px) and (orientation: landscape) {
+            .hero h1 {
+                font-size: 8vw !important; /* Максимальный масштаб */
+                line-height: 0.85 !important;
+                letter-spacing: -1.5px !important;
+                white-space: nowrap !important; /* Запрет случайного переноса на 3 строку */
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                margin-bottom: 2rem !important;
+            }
+            .typewriter-cursor {
+                width: 1.1vw !important;
+                height: 5.8vw !important;
+            }
         }
     </style>
 </head>
@@ -541,7 +614,9 @@
                                     A fast-paced top-down shooter prototype where movement is entirely dictated by weapon recoil. Focused on responsive controls, satisfying weapon feedback, and tight combat loops.
                                 </p>
                             </div>
-                            <a href="https://yehor-khadyko.itch.io/recoil-arena" target="_blank" class="project-link">Play on Itch.io ↗</a>
+                            <a href="https://yehor-khadyko.itch.io/recoil-arena" target="_blank" class="project-link">
+                                Play on Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                            </a>
                         </div>
 
                         <div class="project-card reveal-on-scroll">
@@ -610,17 +685,23 @@
                         
                         <a href="https://www.linkedin.com/in/yehor-khadyko/" target="_blank" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Network]</span>
-                            <span class="contact-title">LinkedIn ↗</span>
+                            <span class="contact-title">
+                                LinkedIn <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                            </span>
                         </a>
 
                         <a href="https://yehor-khadyko.itch.io" target="_blank" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Developer]</span>
-                            <span class="contact-title">Itch.io ↗</span>
+                            <span class="contact-title">
+                                Itch.io <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                            </span>
                         </a>
 
                         <a href="mailto:yehor.khadyko@gmail.com" class="contact-card-link reveal-on-scroll">
                             <span class="contact-label">[Direct]</span>
-                            <span class="contact-title">Email ↗</span>
+                            <span class="contact-title">
+                                Email <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                            </span>
                         </a>
 
                     </div>
@@ -688,9 +769,19 @@
         });
 
         // ==========================================================================
-        // ЭФФЕКТ ПЕЧАТНОЙ МАШИНКИ (ДВУХПОТОЧНЫЙ СИНХРОН)
+        // ЭФФЕКТ ПЕЧАТНОЙ МАШИНКИ (ДВУХПОТОЧНЫЙ СИНХРОН С УЧЕТОМ ОРИЕНТАЦИИ ЭКРАНА)
         // ==========================================================================
-        const text = "DESIGNING GAMES.\nSHAPING ATMOSPHERE.";
+        function getResponsiveText() {
+            // Если портретная ориентация на мобильном или планшете — разбиваем на 4 строки
+            const isPortrait = window.matchMedia("(max-width: 1024px) and (orientation: portrait)").matches;
+            if (isPortrait) {
+                return "DESIGNING\nGAMES.\nSHAPING\nATMOSPHERE.";
+            } else {
+                return "DESIGNING GAMES.\nSHAPING ATMOSPHERE.";
+            }
+        }
+
+        const text = getResponsiveText();
         const headingElement = document.getElementById('hero-heading');
         const typewriterCursor = document.getElementById('typewriterCursor');
         const cursorTarget = document.getElementById('cursor-target');
