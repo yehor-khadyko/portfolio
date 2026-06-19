@@ -756,12 +756,22 @@
         const mainTypewriter = document.getElementById('typewriter');
         const cloneTypewriter = lensWrapper.querySelector('.hero h1 span:first-child');
         
-        
         const themeBtn = document.getElementById('themeBtn');
         const body = document.body;
         const themes = ['dark', 'light', 'lilac'];
 
-        const savedTheme = localStorage.getItem('theme') || 'dark';
+        let savedTheme = 'dark';
+        try {
+            const localValue = localStorage.getItem('theme');
+            if (themes.includes(localValue)) {
+                savedTheme = localValue;
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        } catch (e) {
+            console.warn('LocalStorage is blocked or unavailable:', e);
+        }
+
         body.setAttribute('data-theme', savedTheme);
 
         let resizeTimeout;
